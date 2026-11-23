@@ -1,11 +1,16 @@
 import mammoth from 'mammoth'
 import JSZip from 'jszip'
-import type { DocMeta, HeaderFooterContent, PageSettings } from './types'
+import type { JSONContent } from '@tiptap/core'
+import type { CommentThread, DocMeta, DocStyles, HeaderFooterContent, PageSettings } from './types'
+import { readDocx } from './docx-reader'
 import { twipToMm } from './units'
 import { PAPER_SIZES } from './defaults'
 
 export interface DocxImportResult {
   html: string
+  json?: JSONContent
+  styles?: Partial<DocStyles>
+  comments?: CommentThread[]
   page: Partial<PageSettings>
   meta: Partial<DocMeta>
   messages: string[]
@@ -133,6 +138,18 @@ interface MammothParagraph {
 }
 
 export async function importDocx(bytes: Uint8Array): Promise<DocxImportResult> {
+  // The full-fidelity reader keeps fonts, colours, sizes, spacing, tables and pictures.
+  try {
+    const r = await readDocx(bytes)
+    const { page, meta } = await readLayout(bytes)
+    return { html: '', json: r.content, styles: r.styles, comments: r.comments, page, meta, messages: r.messages }
+  } catch (err) {
+    console.warn('Full Word reader failed, using the simplified reader instead', err)
+  }
+  return importDocxSimple(bytes)
+}
+
+async function importDocxSimple(bytes: Uint8Array): Promise<DocxImportResult> {
   const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
   const m = mammoth as unknown as {
     convertToHtml: (input: { arrayBuffer: ArrayBuffer }, opts: Record<string, unknown>) => Promise<{ value: string; messages: { type: string; message: string }[] }>

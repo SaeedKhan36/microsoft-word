@@ -123,7 +123,9 @@ export async function openPath(path: string, password?: string): Promise<string 
         format: 'docx',
         page,
         meta: { ...defaultMeta(r.meta.title || name), ...stripEmpty(r.meta) },
-        initial: { html: r.html },
+        styles: r.styles ? { ...defaultStyles(), ...r.styles } : undefined,
+        comments: r.comments ?? [],
+        initial: r.json ? { json: r.json } : { html: r.html },
         notice: r.messages.length ? `Some Word features were simplified when opening this file (${r.messages.length} note${r.messages.length > 1 ? 's' : ''}).` : null
       })
     } else if (kind === 'md' || kind === 'html' || kind === 'txt') {
