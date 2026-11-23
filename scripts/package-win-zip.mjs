@@ -7,7 +7,8 @@ import JSZip from 'jszip'
 
 const root = 'dist/win-unpacked'
 const exe = path.join(root, 'Personal Editor.exe')
-execFileSync(process.execPath, ['scripts/set-exe-icon.mjs', exe], { stdio: 'inherit' })
+// Editing the exe without Wine is optional (PE_SET_ICON=1): the official Windows build embeds the icon properly.
+if (process.env.PE_SET_ICON === '1') execFileSync(process.execPath, ['scripts/set-exe-icon.mjs', exe], { stdio: 'inherit' })
 
 const version = JSON.parse(fs.readFileSync('package.json', 'utf8')).version
 const zip = new JSZip()

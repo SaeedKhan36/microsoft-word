@@ -16,7 +16,7 @@ import {
   type WebContents
 } from 'electron'
 import { join, extname, resolve } from 'path'
-import { promises as fs, existsSync, statSync, readFileSync } from 'fs'
+import { promises as fs, existsSync, statSync, readFileSync, mkdirSync, writeFileSync } from 'fs'
 import type { PrintJob, PrintOptions, ContextMenuParams, AppSettings } from '@shared/types'
 import * as store from './store'
 import { transcribeImage } from './ai'
@@ -46,6 +46,35 @@ function collectFiles(argv: string[], cwd = process.cwd()): string[] {
   }
   return out
 }
+
+// ------------------------------------------------------------------ graphics safe mode
+// Some PCs (old or missing graphics drivers, remote desktops, locked-down or sandboxed accounts)
+// can't start Chromium's separate GPU process. If that happens once, we remember it and from then on
+// render in software inside the main process, which works everywhere.
+
+const safeModeFlag = (): string => join(app.getPath('userData'), 'graphics-safe-mode')
+const safeMode = process.argv.includes('--safe-graphics') || process.env['PE_SAFE_GRAPHICS'] === '1' || existsSync(safeModeFlag())
+if (safeMode) {
+  app.disableHardwareAcceleration()
+  app.commandLine.appendSwitch('disable-gpu')
+  app.commandLine.appendSwitch('disable-gpu-compositing')
+  app.commandLine.appendSwitch('in-process-gpu')
+  app.commandLine.appendSwitch('disable-gpu-sandbox')
+}
+let relaunchingForGraphics = false
+app.on('child-process-gone', (_e, details) => {
+  if (details.type !== 'GPU' || safeMode || relaunchingForGraphics) return
+  if (details.reason === 'clean-exit' || details.reason === 'killed') return
+  relaunchingForGraphics = true
+  try {
+    mkdirSync(app.getPath('userData'), { recursive: true })
+    writeFileSync(safeModeFlag(), `GPU process ${details.reason} (exit code ${details.exitCode}) at ${new Date().toISOString()}\n`)
+  } catch {
+    /* still relaunch with the switch */
+  }
+  app.relaunch({ args: [...process.argv.slice(1), '--safe-graphics'] })
+  app.exit(0)
+})
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()
@@ -202,8 +231,10 @@ function runAutotest(win: BrowserWindow): void {
       const code = readFileSync(script, 'utf8')
       const result = await win.webContents.executeJavaScript(`(async () => { ${code} })()`, true)
       console.log('[autotest:result]', JSON.stringify(result))
+      if (process.env['PE_AUTOTEST_OUT']) writeFileSync(process.env['PE_AUTOTEST_OUT'], JSON.stringify({ ok: true, result, safeMode }))
     } catch (err) {
       console.log('[autotest:error]', (err as Error).message)
+      if (process.env['PE_AUTOTEST_OUT']) writeFileSync(process.env['PE_AUTOTEST_OUT'], JSON.stringify({ ok: false, error: (err as Error).message }))
     }
     setTimeout(() => app.exit(0), 300)
   })
