@@ -13,4 +13,8 @@ npm run dev
 
 Run `npm run typecheck` to check the TypeScript code. Run `npm run build:win` to build the 64-bit Windows installer.
 
-The application source is pending its first push to this repository.
+## Architecture
+
+See [the architecture and build plan](docs/ARCHITECTURE.md) for the project design and roadmap.
+
+Created in [T3 Code](https://t3.codes).

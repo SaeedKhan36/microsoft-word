@@ -1,0 +1,39 @@
+appId: com.personaleditor.app
+productName: Personal Editor
+copyright: Personal use
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**
+  - package.json
+  - "!**/*.map"
+asar: true
+fileAssociations:
+  - ext: ped
+    name: Personal Editor Document
+    description: Personal Editor Document
+    role: Editor
+win:
+  icon: build/icon.png
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Personal Editor
+  uninstallDisplayName: Personal Editor
+  artifactName: Personal-Editor-Setup-${version}.${ext}
+  deleteAppDataOnUninstall: false
+portable:
+  artifactName: Personal-Editor-Portable-${version}.${ext}
+linux:
+  icon: build/icon.png
+  target: [dir]
+  category: Office
