@@ -4,7 +4,12 @@ import { groupLines, inkBounds, strokePath, type InkStroke } from './ink'
 import { loadImage } from './images'
 import { useApp } from '@/state/store'
 
-export type HandwritingEngine = 'local' | 'ai'
+export type HandwritingEngine = 'local' | 'local-hq' | 'ai'
+
+const MODELS: Record<string, string> = {
+  local: 'Xenova/trocr-small-handwritten',
+  'local-hq': 'Xenova/trocr-base-handwritten'
+}
 
 export interface Progress {
   stage: string
@@ -12,16 +17,17 @@ export interface Progress {
 }
 
 type Pipe = (input: string) => Promise<{ generated_text: string }[]>
-let pipePromise: Promise<Pipe> | null = null
+const pipes = new Map<string, Promise<Pipe>>()
 
 /** Local, offline handwriting recognition (TrOCR). The model is downloaded once and cached. */
-async function localPipeline(onProgress?: (p: Progress) => void): Promise<Pipe> {
+async function localPipeline(model: string, onProgress?: (p: Progress) => void): Promise<Pipe> {
+  let pipePromise = pipes.get(model)
   if (!pipePromise) {
     pipePromise = (async () => {
       const tf = await import('@huggingface/transformers')
       tf.env.allowLocalModels = false
       tf.env.useBrowserCache = true
-      const p = await tf.pipeline('image-to-text', 'Xenova/trocr-small-handwritten', {
+      const p = await tf.pipeline('image-to-text', model, {
         dtype: 'q8',
         device: 'wasm',
         progress_callback: (e: { status?: string; progress?: number; file?: string }) => {
@@ -31,9 +37,8 @@ async function localPipeline(onProgress?: (p: Progress) => void): Promise<Pipe> 
       } as never)
       return p as unknown as Pipe
     })()
-    pipePromise.catch(() => {
-      pipePromise = null
-    })
+    pipes.set(model, pipePromise)
+    pipePromise.catch(() => pipes.delete(model))
   }
   return pipePromise
 }
@@ -50,7 +55,7 @@ export async function recognizeImages(images: string[], engine: HandwritingEngin
     return out
   }
   onProgress?.({ stage: 'Loading handwriting model…' })
-  const pipe = await localPipeline(onProgress)
+  const pipe = await localPipeline(MODELS[engine] ?? MODELS.local, onProgress)
   const out: string[] = []
   for (let i = 0; i < images.length; i++) {
     onProgress?.({ stage: `Recognising line ${i + 1} of ${images.length}…`, pct: (i / images.length) * 100 })

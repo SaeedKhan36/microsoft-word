@@ -435,11 +435,20 @@ kbd {
 .ribbon-body {
   display: flex;
   align-items: stretch;
-  height: 98px;
-  padding: 4px 8px 6px;
+  height: 106px;
+  padding: 4px 8px 4px;
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: thin;
+}
+.ribbon-body::-webkit-scrollbar {
+  height: 5px;
+}
+.ribbon-body::-webkit-scrollbar-thumb {
+  border-width: 0;
+  background: transparent;
+}
+.ribbon-body:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text) 25%, transparent);
 }
 .ribbon.simplified .ribbon-body {
   height: 44px;
@@ -473,6 +482,7 @@ kbd {
 }
 .r-group-label {
   flex: 0 0 auto;
+  margin-top: 2px;
   font-size: 11px;
   color: var(--text-3);
   text-align: center;
@@ -518,8 +528,16 @@ kbd {
 .r-stack {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding-top: 2px;
+  gap: 2px;
+  padding-top: 1px;
+}
+.r-stack .rbtn,
+.r-stack .rbtn-split {
+  height: 25px;
+  justify-content: flex-start;
+}
+.r-stack .rbtn-split .rbtn {
+  height: 23px;
 }
 .ribbon.simplified .r-stack {
   flex-direction: row;
@@ -582,10 +600,15 @@ kbd {
   stroke-width: 1.5;
 }
 .rbtn.big .rbtn-label {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  display: block;
+  max-height: 2.3em;
   overflow: hidden;
+}
+.rbtn-split.big {
+  align-items: stretch;
+}
+.rbtn-split.big > .rbtn {
+  width: 100%;
 }
 .ribbon.simplified .rbtn.big {
   flex-direction: row;
@@ -712,7 +735,8 @@ kbd {
   align-items: stretch;
   border: 1px solid var(--border);
   border-radius: var(--r);
-  background: var(--surface);
+  background: #ffffff;
+  color: #1b1b1b;
   height: 74px;
   overflow: hidden;
 }
@@ -747,17 +771,24 @@ kbd {
   display: none;
 }
 .style-chip:hover {
-  background: var(--hover);
+  background: rgba(18, 28, 52, 0.06);
 }
 .style-chip.on {
-  border-color: var(--accent);
-  background: var(--accent-softer);
+  border-color: #2f5bea;
+  background: #eef2ff;
+}
+.style-gallery .style-chip-name {
+  color: #6b7280;
+}
+.style-gallery-more {
+  color: #586173 !important;
+  border-left-color: #e3e6ec !important;
 }
 .style-chip-sample {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--text);
+  color: #1b1b1b;
   line-height: 1.25;
 }
 .style-chip-name {
@@ -1733,8 +1764,8 @@ button.sb-item:hover {
 /* ---------------------------------------------------------------- backstage */
 
 .backstage {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  inset: var(--titlebar-h) 0 0 0;
   z-index: 40;
   display: flex;
   background: var(--surface);

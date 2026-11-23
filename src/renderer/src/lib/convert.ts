@@ -5,12 +5,34 @@ import { marked } from 'marked'
 import type { DocStyles } from './types'
 
 export function htmlToMarkdown(html: string): string {
-  const td = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced', bulletListMarker: '-', emDelimiter: '*' })
+  // Math, footnotes, drawings and page breaks have no text, so turndown treats them as "blank"
+  // nodes and skips its normal rules for them. Handle them here instead.
+  const special = (node: HTMLElement): string | null => {
+    const type = node.getAttribute?.('data-type')
+    if (type === 'block-math') return `\n\n$$\n${node.getAttribute('data-latex') ?? ''}\n$$\n\n`
+    if (type === 'inline-math') return `$${node.getAttribute('data-latex') ?? ''}$`
+    if (type === 'page-break') return '\n\n---\n\n'
+    if (type === 'ink') return '\n\n*[drawing]*\n\n'
+    if (node.nodeName === 'SUP' && node.hasAttribute('data-footnote')) return `[^${node.getAttribute('data-footnote')}]`
+    return null
+  }
+  const td = new TurndownService({
+    headingStyle: 'atx',
+    codeBlockStyle: 'fenced',
+    bulletListMarker: '-',
+    emDelimiter: '*',
+    blankReplacement: (_content, node) => special(node as HTMLElement) ?? ((node as { isBlock?: boolean }).isBlock ? '\n\n' : '')
+  })
+  const notes: string[] = []
+  new DOMParser()
+    .parseFromString(html, 'text/html')
+    .querySelectorAll('sup[data-footnote]')
+    .forEach((n) => notes.push(`[^${n.getAttribute('data-footnote')}]: ${n.getAttribute('data-text') ?? ''}`))
   td.use(gfm)
   td.addRule('pageBreak', { filter: (n) => (n as HTMLElement).getAttribute?.('data-type') === 'page-break', replacement: () => '\n\n---\n\n' })
   td.addRule('footnote', {
     filter: (n) => n.nodeName === 'SUP' && (n as HTMLElement).hasAttribute('data-footnote'),
-    replacement: (_c, n) => ` (${(n as HTMLElement).getAttribute('data-text') ?? ''})`
+    replacement: (_c, n) => `[^${(n as HTMLElement).getAttribute('data-footnote') ?? ''}]`
   })
   td.addRule('mathInline', {
     filter: (n) => (n as HTMLElement).getAttribute?.('data-type') === 'inline-math',
@@ -22,12 +44,22 @@ export function htmlToMarkdown(html: string): string {
   })
   td.addRule('strike', { filter: ['s', 'del', 'strike'] as never, replacement: (c) => `~~${c}~~` })
   td.addRule('ink', { filter: (n) => (n as HTMLElement).getAttribute?.('data-type') === 'ink', replacement: () => '\n\n*[drawing]*\n\n' })
-  return td.turndown(html).replace(/\n{3,}/g, '\n\n').trim() + '\n'
+  const body = td.turndown(html).replace(/\n{3,}/g, '\n\n').trim()
+  return body + (notes.length ? `\n\n${notes.join('\n')}` : '') + '\n'
 }
 
 export function markdownToHtml(md: string): string {
   // Convert $$...$$ and $...$ into math nodes the editor understands.
-  const withMath = md
+  // Footnotes: [^id] references with "[^id]: text" definitions.
+  const notes = new Map<string, string>()
+  const withoutDefs = md.replace(/^\[\^([^\]]+)\]:[ \t]*(.*)$/gm, (_m, id, text) => {
+    notes.set(id, text)
+    return ''
+  })
+  const withNotes = withoutDefs.replace(/\[\^([^\]]+)\]/g, (m, id) =>
+    notes.has(id) ? `<sup data-footnote="f${escapeAttr(id)}" data-text="${escapeAttr(notes.get(id)!)}"></sup>` : m
+  )
+  const withMath = withNotes
     .replace(/\$\$([\s\S]+?)\$\$/g, (_m, tex) => `<div data-type="block-math" data-latex="${escapeAttr(tex.trim())}"></div>`)
     .replace(/(^|[^\\$])\$([^$\n]+?)\$/g, (_m, pre, tex) => `${pre}<span data-type="inline-math" data-latex="${escapeAttr(tex.trim())}"></span>`)
   return marked.parse(withMath, { gfm: true, breaks: false, async: false }) as string

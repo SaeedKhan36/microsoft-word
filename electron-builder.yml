@@ -9,6 +9,9 @@ files:
   - package.json
   - "!**/*.map"
 asar: true
+extraResources:
+  - from: build/icon.png
+    to: icon.png
 fileAssociations:
   - ext: ped
     name: Personal Editor Document
@@ -16,10 +19,13 @@ fileAssociations:
     role: Editor
 win:
   icon: build/icon.png
+  artifactName: Personal-Editor-${version}-win-${arch}.${ext}
   target:
     - target: nsis
       arch: [x64]
     - target: portable
+      arch: [x64]
+    - target: zip
       arch: [x64]
 nsis:
   oneClick: false

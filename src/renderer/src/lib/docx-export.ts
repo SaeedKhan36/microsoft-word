@@ -327,7 +327,7 @@ function blocks(nodes: JSONContent[] = [], ctx: Ctx, list?: { ref: string; level
   for (const node of nodes) {
     switch (node.type) {
       case 'paragraph': {
-        const opts = paragraphOptions(node)
+        const opts = paragraphOptions(node) as Record<string, unknown>
         if (imageCentered(node)) opts.alignment = AlignmentType.CENTER
         if (list) Object.assign(opts, { numbering: { reference: list.ref, level: list.level, instance: list.instance } })
         out.push(new Paragraph({ ...opts, children: inlineChildren(node.content, ctx) }))

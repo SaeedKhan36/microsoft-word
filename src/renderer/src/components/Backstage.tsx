@@ -293,8 +293,10 @@ function HomePage(): ReactNode {
   const docs = useApp((s) => s.docs)
   const name = useApp((s) => s.settings.userName)
   useEffect(() => {
-    void window.pe.recovery.list().then((list) => setRecovery(list.filter((r) => !docs.some((d) => d.id === r.docId))))
-  }, [docs])
+    void window.pe.recovery.list().then(setRecovery)
+  }, [])
+  // Documents that are open right now aren't "recovered", even if they have a recovery file.
+  const recovered = recovery.filter((r) => !docs.some((d) => d.id === r.docId))
   return (
     <>
       <div className="hero">
@@ -315,14 +317,14 @@ function HomePage(): ReactNode {
         </button>
       </div>
       <TemplateGrid limit={6} />
-      {recovery.length > 0 && (
+      {recovered.length > 0 && (
         <>
           <div className="bs-sub">
             <LifeBuoy size={18} color="var(--warning)" /> Recovered documents
           </div>
           <div className="hint" style={{ marginBottom: 10 }}>Personal Editor closed before these were saved. Restore them to keep your work.</div>
           <div className="file-list">
-            {recovery.map((r) => (
+            {recovered.map((r) => (
               <div key={r.docId} className="file-row" style={{ gridTemplateColumns: '34px minmax(0,1fr) 150px auto auto' }}>
                 <span className="file-icon" style={{ background: 'var(--warning)' }}>
                   !
@@ -773,7 +775,7 @@ function OptionsPage(): ReactNode {
         </div>
 
         <div className="bs-sub">Saving</div>
-        <Checkbox checked={s.autoSave} onChange={(v) => setS({ autoSave: v })} label="AutoSave documents that are already saved to a file" />
+        <Checkbox checked={s.autoSave} onChange={(v) => setS({ autoSave: v })} label="AutoSave Personal Editor documents (.ped) that are already saved to a file" />
         <label className="field" style={{ maxWidth: 360 }}>
           <span className="field-label">Save a version to history every</span>
           <select className="select" value={s.versionIntervalMin} onChange={(e) => setS({ versionIntervalMin: Number(e.target.value) })}>

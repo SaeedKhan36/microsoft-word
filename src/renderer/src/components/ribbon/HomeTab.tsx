@@ -282,7 +282,7 @@ export function HomeTab({ editor }: { editor: Editor }): ReactNode {
       <Group label="Styles" launcher={() => useApp.getState().set({ rightPane: 'styles' })} launcherTip="Styles pane">
         <div className="style-gallery" style={galleryVars}>
           <div className="style-gallery-items">
-            {STYLE_PRESETS.slice(0, 7).map((s) => (
+            {STYLE_PRESETS.slice(0, 5).map((s) => (
               <button key={s.id} className={`style-chip ${s.isActive(editor) ? 'on' : ''}`} onMouseDown={(e) => e.preventDefault()} onClick={() => s.apply(editor)} data-tip={s.name}>
                 <span className="style-chip-sample" style={s.sample}>
                   AaBbCc

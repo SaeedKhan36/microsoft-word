@@ -104,7 +104,11 @@ class InkView implements NodeView {
     if (e.button !== 0 && e.pointerType === 'mouse') return
     e.preventDefault()
     e.stopPropagation()
-    this.dom.setPointerCapture(e.pointerId)
+    try {
+      this.dom.setPointerCapture(e.pointerId)
+    } catch {
+      /* pointer already released */
+    }
     const r = this.dom.getBoundingClientRect()
     const scale = r.width / (this.dom.offsetWidth || r.width) || 1
     this.canvas.width = this.dom.offsetWidth * 2

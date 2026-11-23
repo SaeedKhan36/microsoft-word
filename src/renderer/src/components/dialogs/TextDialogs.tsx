@@ -354,7 +354,7 @@ export function LinkDialog({ onClose }: Close): ReactNode {
                 </option>
               ))}
               {headings.map((h) => (
-                <option key={h.pos} value={`#h-${h.pos}`}>
+                <option key={h.pos} value={`#h:${encodeURIComponent(h.text)}`}>
                   {'  '.repeat(h.level - 1)}
                   {h.text}
                 </option>

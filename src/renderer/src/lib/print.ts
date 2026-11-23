@@ -44,6 +44,9 @@ export function buildPrintJob(doc: DocTab): PrintJob {
   clone.querySelectorAll('.pe-comment').forEach((el) => el.classList.add('pe-comment-print'))
   const pages = clone.querySelectorAll('.pe-sheet').length || 1
   clone.style.height = `${pages * h}px`
+  clone.style.overflow = 'hidden'
+  // The on-screen minimum height includes the gaps between pages; drop them so no blank page is added.
+  clone.querySelector<HTMLElement>('.pe-editor-host')?.style.setProperty('--min-h', `${pages * h}px`)
 
   return {
     html: clone.outerHTML,

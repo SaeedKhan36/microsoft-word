@@ -181,7 +181,13 @@ export const LinkClick = Extension.create<{ open: (href: string) => void }>({
             if (!a) return false
             if (event.ctrlKey || event.metaKey) {
               const href = a.getAttribute('href') || ''
-              if (href.startsWith('#')) {
+              if (href.startsWith('#h:')) {
+                // Link to a heading by its text.
+                const text = decodeURIComponent(href.slice(3))
+                const dom = _view.dom as HTMLElement
+                const target = Array.from(dom.querySelectorAll('h1, h2, h3, h4, h5, h6')).find((h) => h.textContent === text)
+                target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              } else if (href.startsWith('#')) {
                 document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'center' })
               } else open(href)
               return true

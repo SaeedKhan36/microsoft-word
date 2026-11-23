@@ -13,6 +13,11 @@ import { Dialogs } from './components/dialogs/Dialogs'
 import * as io from './lib/io'
 import { runCommand, toggleFocusMode, openFind, copyFormat, applyFormat } from './state/commands'
 import type { PrintJob } from '@shared/types'
+import * as commands from './state/commands'
+import { activeEditor } from './state/store'
+
+// Test hook used by the automated UI checks (harmless in normal use).
+;(window as unknown as Record<string, unknown>).__pe = { useApp, getEditor, activeEditor, io, commands, hw: () => import('./lib/handwriting') }
 
 export function App(): ReactNode {
   if (location.hash === '#print') return <PrintHost />
@@ -129,8 +134,9 @@ function Shell(): ReactNode {
           versioned.set(d.id, { counter: d.changeCounter, at: now })
           void io.snapshot(d.id, 'auto')
         }
-        // AutoSave for documents that already live in a file.
-        if (st.settings.autoSave && d.path && d.dirty && (d.format === 'ped' || d.format === 'docx') && d.saving !== 'saving') {
+        // AutoSave for .ped documents that already live in a file. Word files are only written when
+        // you press Save, so an opened .docx is never overwritten behind your back.
+        if (st.settings.autoSave && d.path && d.dirty && d.format === 'ped' && d.saving !== 'saving') {
           const a = autosaveSeen.get(d.id)
           if (!a || a.counter !== d.changeCounter) autosaveSeen.set(d.id, { counter: d.changeCounter, at: now })
           else if (now - a.at > 3000) {

@@ -66,7 +66,7 @@ export function DropBtn({
       placement={placement}
       className={className}
       trigger={({ toggle, ref, open }) => (
-        <span ref={ref} style={{ display: 'inline-flex' }}>
+        <span ref={ref} style={{ display: 'inline-block' }}>
           <Btn {...props} on={props.on || open} caret onClick={toggle} />
         </span>
       )}

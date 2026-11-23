@@ -19,8 +19,10 @@ import { join, extname, resolve } from 'path'
 import { promises as fs, existsSync, statSync, readFileSync } from 'fs'
 import type { PrintJob, PrintOptions, ContextMenuParams, AppSettings } from '@shared/types'
 import * as store from './store'
+import { transcribeImage } from './ai'
 
 const isDev = !app.isPackaged && !!process.env['ELECTRON_RENDERER_URL']
+if (process.env['PE_AUTOTEST']) app.setPath('userData', join(app.getPath('temp'), 'personal-editor-autotest'))
 const OPENABLE = new Set(['.ped', '.docx', '.html', '.htm', '.md', '.markdown', '.txt'])
 
 let mainWindow: BrowserWindow | null = null
@@ -94,7 +96,7 @@ function createWindow(): void {
       y = undefined
     }
   }
-  const iconPath = join(__dirname, '../../build/icon.png')
+  const iconPath = app.isPackaged ? join(process.resourcesPath, 'icon.png') : join(__dirname, '../../build/icon.png')
   mainWindow = new BrowserWindow({
     width: state.width,
     height: state.height,
@@ -115,8 +117,10 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       spellcheck: true,
-      paintWhenInitiallyHidden: true
-    }
+      offscreen: !!process.env['PE_AUTOTEST'],
+      backgroundThrottling: !process.env['PE_AUTOTEST']
+    },
+    paintWhenInitiallyHidden: true
   })
 
   if (state.maximized) mainWindow.maximize()
@@ -226,9 +230,9 @@ async function renderPrintJob(job: PrintJob): Promise<BrowserWindow> {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,
       contextIsolation: true,
-      paintWhenInitiallyHidden: true,
       spellcheck: false
-    }
+    },
+    paintWhenInitiallyHidden: true
   })
   const id = win.webContents.id
   printJobs.set(id, job)
@@ -402,7 +406,7 @@ ipcMain.handle('spell:languages', () => session.defaultSession.availableSpellChe
 ipcMain.handle('spell:setLanguages', (_e, langs: string[]) => {
   if (process.platform === 'darwin') return
   const available = new Set(session.defaultSession.availableSpellCheckerLanguages)
-  const valid = langs.filter((l) => available.has(l))
+  const valid = langs.filter((l: string) => available.has(l))
   if (valid.length) session.defaultSession.setSpellCheckerLanguages(valid)
 })
 
@@ -460,6 +464,8 @@ ipcMain.handle('templates:save', (_e, name: string, data: Uint8Array) => store.s
 ipcMain.handle('templates:read', (_e, id: string) => store.readTemplate(id))
 ipcMain.handle('templates:delete', (_e, id: string) => store.deleteTemplate(id))
 
+ipcMain.handle('ai:transcribe', (_e, dataUrl: string) => transcribeImage(dataUrl))
+
 // ------------------------------------------------------------------ lifecycle
 
 app.whenReady().then(() => {
@@ -474,7 +480,7 @@ app.whenReady().then(() => {
   if (process.platform !== 'darwin') {
     try {
       const available = new Set(session.defaultSession.availableSpellCheckerLanguages)
-      const langs = s.spellLanguages.filter((l) => available.has(l))
+      const langs = s.spellLanguages.filter((l: string) => available.has(l))
       if (langs.length) session.defaultSession.setSpellCheckerLanguages(langs)
     } catch {
       /* spellchecker unavailable */

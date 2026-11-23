@@ -15,6 +15,13 @@
 | Cloud / account | None. Works fully offline |
 | Language | TypeScript everywhere |
 
+
+> **As built (v1.0):** the app follows this plan, with these simplifications:
+> - Local data (settings, recent files, search index, recovery) is kept in small JSON files in `%APPDATA%\Personal Editor\`, not SQLite, so the app has no native modules and builds anywhere.
+> - Version history is saved as compressed snapshots in `versions\<docId>\`.
+> - DOCX, Markdown and PDF conversion run in the renderer.
+> - The heavy worker process wasn't needed; handwriting recognition runs in a WebAssembly worker.
+
 ---
 
 ## 1. Goals and non-goals

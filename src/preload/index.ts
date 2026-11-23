@@ -148,6 +148,9 @@ const api = {
     read: (id: string) => invoke<Uint8Array | null>('templates:read', id),
     remove: (id: string) => invoke<void>('templates:delete', id)
   },
+  ai: {
+    transcribe: (dataUrl: string) => invoke<string>('ai:transcribe', dataUrl)
+  },
   dev: {
     shot: (name: string) => invoke<string>('dev:shot', name)
   }

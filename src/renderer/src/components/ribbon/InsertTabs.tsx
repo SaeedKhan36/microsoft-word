@@ -255,7 +255,7 @@ export function DrawTab({ editor }: { editor: Editor }): ReactNode {
   const setBg = (bg: string): void => {
     if (inkSelected) editor.chain().focus().updateAttributes('ink', { background: bg }).run()
   }
-  const penIcon = (t: string): ReactNode => (t === 'pencil' ? <Pencil /> : t === 'highlighter' ? <Highlighter /> : <Pen />)
+  const penIcon = (t: string, color: string): ReactNode => (t === 'pencil' ? <Pencil color={color} /> : t === 'highlighter' ? <Highlighter color={color} /> : <Pen color={color} />)
   return (
     <>
       <Group label="Tools">
@@ -267,7 +267,7 @@ export function DrawTab({ editor }: { editor: Editor }): ReactNode {
           <DropBtn
             key={i}
             big
-            icon={<span style={{ color: p.color, display: 'grid' }}>{penIcon(p.tool)}</span>}
+            icon={penIcon(p.tool, p.color)}
             label={p.tool === 'highlighter' ? 'Highlight' : p.tool === 'pencil' ? 'Pencil' : 'Pen'}
             title={`${p.tool[0].toUpperCase() + p.tool.slice(1)} (${p.size}px)`}
             on={draw.tool === p.tool && draw.activePen === i}

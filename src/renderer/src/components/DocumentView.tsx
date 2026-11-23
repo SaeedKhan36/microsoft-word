@@ -59,6 +59,7 @@ export function DocumentView({ doc, active }: { doc: DocTab; active: boolean }):
   const scrollRef = useRef<HTMLDivElement>(null)
   const stackRef = useRef<HTMLDivElement>(null)
   const measureRef = useRef<HTMLDivElement>(null)
+  const baseline = useRef<import('@tiptap/pm/model').Node | null>(null)
 
   const editor = useEditor(
     {
@@ -80,8 +81,17 @@ export function DocumentView({ doc, active }: { doc: DocTab; active: boolean }):
         registerEditor(doc.id, e)
         e.storage.trackChanges.author = useApp.getState().settings.userName
         e.storage.trackChanges.enabled = doc.trackChanges
+        // Let normalising plugins (trailing paragraph, table fixes) run once, then remember the
+        // loaded document so those automatic fixes don't count as unsaved changes.
+        e.view.dispatch(e.state.tr.setMeta('pe-init', true).setMeta('addToHistory', false))
+        baseline.current = e.state.doc
       },
-      onUpdate: () => markDirty(doc.id)
+      onUpdate: ({ editor: e }) => {
+        const isDirty = useApp.getState().docs.find((d) => d.id === doc.id)?.dirty
+        if (!isDirty && baseline.current && e.state.doc.eq(baseline.current)) return
+        baseline.current = null
+        markDirty(doc.id)
+      }
     },
     [doc.id]
   )
