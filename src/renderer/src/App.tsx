@@ -92,7 +92,12 @@ function Shell(): ReactNode {
         useApp.getState().set({ isFullscreen: on })
         if (!on && useApp.getState().focusMode) useApp.getState().set({ focusMode: false })
       }),
-      window.pe.app.onContextMenu((p) => useApp.getState().set({ contextMenu: { ...p, clientX: p.x, clientY: p.y } }))
+      window.pe.app.onContextMenu((p) => useApp.getState().set({ contextMenu: { ...p, clientX: p.x, clientY: p.y } })),
+      // macOS menu bar items.
+      window.pe.app.onMenuCommand((id) => {
+        if (id === 'app.palette') useApp.getState().set({ palette: true })
+        else runCommand(id)
+      })
     ]
     return () => offs.forEach((o) => o())
   }, [])
@@ -169,7 +174,7 @@ function Shell(): ReactNode {
         if (st.draw.tool !== 'select') return void (handled(), st.set({ draw: { ...st.draw, tool: 'select' } }))
         return
       }
-      if ((e.altKey && k === 'q') || (mod && e.shiftKey && k === 'p')) return void (handled(), st.set({ palette: true }))
+      if ((e.altKey && e.code === 'KeyQ') || (mod && e.shiftKey && k === 'p')) return void (handled(), st.set({ palette: true }))
       if (e.key === 'F11') return void (handled(), toggleFocusMode())
       if (e.key === 'F12') return void (handled(), d && io.saveDoc(d.id, { saveAs: true }))
       if (e.key === 'F7') return void (handled(), st.set({ rightPane: 'spelling' }))
@@ -187,15 +192,15 @@ function Shell(): ReactNode {
         return
       }
       if (!d || st.backstage) return
-      if (k === 'f' && !e.shiftKey && !e.altKey) return void (handled(), openFind(false))
+      if (e.code === 'KeyF' && !e.shiftKey && !e.altKey) return void (handled(), openFind(false))
       if (k === 'h') return void (handled(), openFind(true))
       if (k === 'k') return void (handled(), st.openDialog('link'))
       if (k === 'd' && !e.shiftKey && !e.altKey) return void (handled(), st.openDialog('font'))
       if (k === 'f' && e.shiftKey) return void (handled(), st.openDialog('font'))
       if (k === 'g' && e.shiftKey) return void (handled(), st.openDialog('wordCount'))
       if (k === 'e' && e.shiftKey) return void (handled(), runCommand('review.track'))
-      if (k === 'm' && e.altKey) return void (handled(), runCommand('ins.comment'))
-      if (k === 'f' && e.altKey) return void (handled(), runCommand('ins.footnote'))
+      if (e.code === 'KeyM' && e.altKey) return void (handled(), runCommand('ins.comment'))
+      if (e.code === 'KeyF' && e.altKey) return void (handled(), runCommand('ins.footnote'))
       if ((k === '*' || k === '8') && e.shiftKey) return void (handled(), runCommand('para.marks'))
       if (k === 'c' && e.shiftKey) return void (handled(), copyFormat(false))
       if (k === 'v' && e.shiftKey && st.formatPainter) return void (handled(), applyFormat())

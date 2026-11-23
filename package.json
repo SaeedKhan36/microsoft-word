@@ -1,7 +1,7 @@
 {
   "name": "personal-editor",
   "productName": "Personal Editor",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "A personal, offline word processor for Windows.",
   "main": "./out/main/index.js",
   "author": "Personal Editor",
@@ -16,7 +16,8 @@
     "build:dir": "electron-vite build && electron-builder --dir",
     "build:linux": "electron-vite build && electron-builder --linux",
     "build:win-zip": "electron-vite build && electron-builder --win dir --x64 -c.win.signAndEditExecutable=false && node scripts/package-win-zip.mjs",
-    "icon": "electron scripts/make-icon.cjs"
+    "icon": "electron scripts/make-icon.cjs",
+    "build:mac": "electron-vite build && electron-builder --mac --publish never"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.12.0",

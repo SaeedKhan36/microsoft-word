@@ -20,6 +20,7 @@ import { promises as fs, existsSync, statSync, readFileSync, mkdirSync, writeFil
 import type { PrintJob, PrintOptions, ContextMenuParams, AppSettings } from '@shared/types'
 import * as store from './store'
 import { transcribeImage } from './ai'
+import { installMenu } from './menu'
 
 const isDev = !app.isPackaged && !!process.env['ELECTRON_RENDERER_URL']
 if (process.env['PE_AUTOTEST']) app.setPath('userData', join(app.getPath('temp'), 'personal-editor-autotest'))
@@ -27,6 +28,10 @@ const OPENABLE = new Set(['.ped', '.docx', '.html', '.htm', '.md', '.markdown', 
 
 let mainWindow: BrowserWindow | null = null
 let allowClose = false
+let quitting = false
+app.on('before-quit', () => {
+  quitting = true
+})
 const pendingFiles: string[] = []
 
 // ------------------------------------------------------------------ single instance
@@ -110,6 +115,7 @@ function isDarkTheme(): boolean {
 }
 
 function createWindow(): void {
+  allowClose = false
   const state = store.getWindowState()
   const dark = isDarkTheme()
   const colors = themeColors(dark)
@@ -138,6 +144,7 @@ function createWindow(): void {
     backgroundColor: colors.bg,
     icon: existsSync(iconPath) ? nativeImage.createFromPath(iconPath) : undefined,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
+    trafficLightPosition: process.platform === 'darwin' ? { x: 14, y: 13 } : undefined,
     titleBarOverlay:
       process.platform === 'darwin' ? undefined : { color: colors.bg, symbolColor: colors.symbol, height: 40 },
     webPreferences: {
@@ -409,7 +416,9 @@ ipcMain.handle('app:info', () => ({
 ipcMain.handle('app:pendingFiles', () => pendingFiles.splice(0))
 ipcMain.handle('app:closeConfirmed', () => {
   allowClose = true
-  mainWindow?.close()
+  // On macOS, Cmd+Q is cancelled while we ask about unsaved documents, so finish quitting here.
+  if (quitting || process.platform !== 'darwin') app.quit()
+  else mainWindow?.close()
 })
 ipcMain.handle('app:setTitle', (_e, title: string) => mainWindow?.setTitle(title))
 ipcMain.handle('app:toggleFullscreen', () => {
@@ -501,7 +510,7 @@ ipcMain.handle('ai:transcribe', (_e, dataUrl: string) => transcribeImage(dataUrl
 
 app.whenReady().then(() => {
   app.setAppUserModelId('com.personaleditor.app')
-  Menu.setApplicationMenu(null)
+  installMenu(() => mainWindow)
 
   session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => {
     cb(['clipboard-sanitized-write', 'clipboard-read', 'local-fonts', 'fullscreen', 'speaker-selection'].includes(permission))

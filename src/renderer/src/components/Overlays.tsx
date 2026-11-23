@@ -60,7 +60,7 @@ import {
 import { useApp, activeEditor } from '@/state/store'
 import { allCommands, clipboardAction, newComment, pasteText } from '@/state/commands'
 import { useSlash } from '@/editor/ext/keymap'
-import { useActiveEditor, Popover, MenuList, type MenuItemDef } from './ui'
+import { useActiveEditor, Popover, MenuList, fmtKeys, type MenuItemDef } from './ui'
 import { NodeSelection } from '@tiptap/pm/state'
 
 // ------------------------------------------------------------------ command palette
@@ -132,7 +132,7 @@ export function CommandPalette(): ReactNode {
             <button key={c.id} className={`palette-item ${i === hot ? 'hot' : ''}`} onMouseEnter={() => setHot(i)} onClick={() => run(i)}>
               <span>{c.label}</span>
               <span className="group">{c.group}</span>
-              {c.keys && <kbd>{c.keys}</kbd>}
+              {c.keys && <kbd>{fmtKeys(c.keys)}</kbd>}
             </button>
           ))}
         </div>

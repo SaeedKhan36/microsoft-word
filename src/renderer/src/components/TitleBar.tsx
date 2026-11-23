@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Save, Undo2, Redo2, Plus, X, Search, FileText, Printer, ChevronDown } from 'lucide-react'
 import { useApp } from '@/state/store'
-import { Logo, useActiveEditor, Dropdown, MenuList } from './ui'
+import { Logo, useActiveEditor, Dropdown, MenuList, fmtKeys } from './ui'
 import * as io from '@/lib/io'
 
 export function TitleBar(): ReactNode {
@@ -82,9 +82,9 @@ export function TitleBar(): ReactNode {
       <button className="tb-search" onClick={() => set({ palette: true })} data-tip="Search for commands, help and more" data-tip-keys="Alt+Q">
         <Search size={14} />
         <span>Search commands</span>
-        <kbd>Alt+Q</kbd>
+        <kbd>{fmtKeys('Alt+Q')}</kbd>
       </button>
-      <div className="tb-spacer-controls" />
+      {platform !== 'darwin' && <div className="tb-spacer-controls" />}
     </div>
   )
 }

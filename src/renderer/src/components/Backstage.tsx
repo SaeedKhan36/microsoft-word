@@ -34,7 +34,7 @@ import {
 import { useApp, activeDoc, markDirty, getEditor, type BackstagePage } from '@/state/store'
 import * as io from '@/lib/io'
 import { TEMPLATES, type Template } from '@/lib/templates'
-import { Logo, Checkbox, Seg } from './ui'
+import { Logo, Checkbox, Seg, fmtKeys } from './ui'
 import type { LibraryHit, PrinterInfo, RecentFile, RecoveryEntry } from '@shared/types'
 import { buildPrintJob } from '@/lib/print'
 import { pageSizePx } from '@/lib/units'
@@ -887,7 +887,7 @@ function AboutPage(): ReactNode {
         <Keyboard size={18} /> Keyboard shortcuts
       </div>
       <div className="kv" style={{ maxWidth: 620 }}>
-        {shortcuts.flatMap(([a, b]) => [<span key={a}>{a}</span>, <span key={a + 'k'}>{b}</span>])}
+        {shortcuts.flatMap(([a, b]) => [<span key={a}>{a}</span>, <span key={a + 'k'}>{fmtKeys(b)}</span>])}
       </div>
       <div className="bs-sub">Your data</div>
       <p className="hint" style={{ maxWidth: 620 }}>

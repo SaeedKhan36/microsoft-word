@@ -85,7 +85,8 @@ const api = {
     onBeforeClose: (cb: () => void) => on<[]>('app:before-close', cb),
     onContextMenu: (cb: (p: ContextMenuParams) => void) => on<[ContextMenuParams]>('app:context-menu', cb),
     onSystemTheme: (cb: (dark: boolean) => void) => on<[boolean]>('app:system-theme', cb),
-    onFullscreen: (cb: (on: boolean) => void) => on<[boolean]>('app:fullscreen', cb)
+    onFullscreen: (cb: (on: boolean) => void) => on<[boolean]>('app:fullscreen', cb),
+    onMenuCommand: (cb: (id: string) => void) => on<[string]>('menu:command', cb)
   },
   spell: {
     replace: (word: string) => invoke<void>('spell:replace', word),

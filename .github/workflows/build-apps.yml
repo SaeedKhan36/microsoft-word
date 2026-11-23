@@ -1,0 +1,105 @@
+name: Build Windows and Mac apps
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Build installer, portable app and zip
+        run: npm run build:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Launch the built app and check it opens
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD 'dist\win-unpacked\Personal Editor.exe'
+          $out = Join-Path $env:RUNNER_TEMP 'autotest.json'
+          $env:PE_AUTOTEST = Join-Path $PWD 'scripts\dbg.js'
+          $env:PE_AUTOTEST_OUT = $out
+          $p = Start-Process -FilePath $exe -PassThru
+          if (-not $p.WaitForExit(120000)) { Stop-Process -Id $p.Id -Force; throw 'The app did not finish its start-up check in time.' }
+          if (-not (Test-Path $out)) { throw 'The app did not start correctly (no test result was written).' }
+          $r = Get-Content $out -Raw
+          Write-Host "Start-up check: $r"
+          if ($r -notmatch '"ok":true') { throw "The app reported a problem: $r" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            dist/*.exe
+            dist/*.zip
+          if-no-files-found: error
+
+  mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Build Mac apps (Apple silicon and Intel)
+        run: npm run build:mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Launch the built app and check it opens
+        run: |
+          APP="dist/mac-arm64/Personal Editor.app"
+          codesign --verify --deep "$APP" && echo "Signature OK"
+          export PE_AUTOTEST="$PWD/scripts/dbg.js"
+          export PE_AUTOTEST_OUT="$RUNNER_TEMP/autotest.json"
+          "$APP/Contents/MacOS/Personal Editor" &
+          PID=$!
+          for i in $(seq 1 120); do
+            if [ -f "$PE_AUTOTEST_OUT" ]; then break; fi
+            sleep 1
+          done
+          kill $PID 2>/dev/null || true
+          test -f "$PE_AUTOTEST_OUT" || { echo "The app did not start correctly"; exit 1; }
+          echo "Start-up check: $(cat "$PE_AUTOTEST_OUT")"
+          grep -q '"ok":true' "$PE_AUTOTEST_OUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac
+          path: |
+            dist/*.dmg
+            dist/*.zip
+          if-no-files-found: error
+
+  release:
+    needs: [windows, mac]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-files
+          merge-multiple: true
+      - name: Publish the download page (GitHub release)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" release-files/* --title "Personal Editor $VERSION" --notes "Personal Editor $VERSION for Windows and Mac.
+
+          **Windows:** download \`Personal-Editor-Setup-$VERSION.exe\` and run it. If Windows shows \"Windows protected your PC\", click More info, then Run anyway.
+
+          **Mac (Apple silicon, M1 or newer):** download \`Personal-Editor-$VERSION-mac-arm64.dmg\`. **Mac (Intel):** download \`Personal-Editor-$VERSION-mac-x64.dmg\`. Open it and drag Personal Editor into Applications. The first time, right-click the app and choose Open, or go to System Settings, then Privacy & Security, then Open Anyway."

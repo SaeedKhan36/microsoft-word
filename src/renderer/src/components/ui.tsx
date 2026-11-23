@@ -4,6 +4,26 @@ import type { Editor } from '@tiptap/core'
 import { Check, X } from 'lucide-react'
 import { useApp, getEditor } from '@/state/store'
 
+// ------------------------------------------------------------------ shortcut labels
+
+/** Show shortcuts the way each platform writes them: Ctrl+Shift+S on Windows, ⇧⌘S on a Mac. */
+export function fmtKeys(keys: string | undefined): string {
+  if (!keys) return ''
+  if (useApp.getState().platform !== 'darwin') return keys
+  return keys
+    .split(' / ')
+    .map((combo) => {
+      const parts = combo.split('+')
+      const key = parts.pop() ?? ''
+      const mods = parts.map((p) => ({ Ctrl: '⌘', Alt: '⌥', Shift: '⇧', Cmd: '⌘' })[p] ?? p)
+      // macOS orders modifiers as ⌃⌥⇧⌘.
+      const order = ['⌃', '⌥', '⇧', '⌘']
+      mods.sort((a, b) => order.indexOf(a) - order.indexOf(b))
+      return mods.join('') + (key === 'Enter' ? '↩' : key === 'Space' ? 'Space' : key)
+    })
+    .join(' / ')
+}
+
 // ------------------------------------------------------------------ editor subscription
 
 /** Returns the active editor and re-renders on every editor transaction (batched per frame). */
@@ -201,7 +221,7 @@ export function MenuList({ items, close }: { items: MenuItemDef[]; close: () => 
           >
             {it.icon}
             <span>{it.label}</span>
-            {it.shortcut && <span className="menu-shortcut">{it.shortcut}</span>}
+            {it.shortcut && <span className="menu-shortcut">{fmtKeys(it.shortcut)}</span>}
           </button>
         )
       )}
