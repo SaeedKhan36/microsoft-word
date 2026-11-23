@@ -5,12 +5,23 @@ import { PageSetupDialog, WatermarkDialog, PageBorderDialog, TableDialog, Passwo
 import { EquationDialog, ChartDialog, ImagePropsDialog, InsertPictureDialog, ShapesDialog, IconsDialog, SourcesDialog, CompareDialog } from './InsertDialogs'
 import { HandwritingDialog } from './HandwritingDialog'
 
+import { MailMerge, AddressDocument, Accessibility, Shortcuts } from './OfficeDialogs'
+
 export function Dialogs(): ReactNode {
   const dialog = useApp((s) => s.dialog)
   if (!dialog) return null
   const close = (): void => useApp.getState().closeDialog()
   const p = dialog.props ?? {}
   switch (dialog.type) {
+    case 'envelope':
+    case 'labels':
+      return <AddressDocument labels={dialog.type === 'labels'} onClose={close} />
+    case 'mailMerge':
+      return <MailMerge onClose={close} />
+    case 'shortcuts':
+      return <Shortcuts onClose={close} />
+    case 'accessibility':
+      return <Accessibility onClose={close} />
     case 'font':
       return <FontDialog onClose={close} />
     case 'paragraph':

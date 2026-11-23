@@ -237,6 +237,7 @@ export function ReviewTab({ editor }: { editor: Editor }): ReactNode {
   }
   return (
     <>
+      <Group label="Accessibility"><Btn big icon={<BookOpen />} label="Check Accessibility" onClick={open('accessibility')} /></Group>
       <Group label="Proofing">
         <Btn big icon={<SpellCheck />} label="Spelling" title="Spelling" keys="F7" desc="Find and fix spelling mistakes across the document." onClick={() => useApp.getState().set({ rightPane: 'spelling' })} />
         <div className="r-stack">

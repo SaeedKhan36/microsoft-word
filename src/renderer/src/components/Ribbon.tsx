@@ -8,6 +8,9 @@ import { InsertTab, DrawTab, DesignTab, LayoutTab } from './ribbon/InsertTabs'
 import { ReferencesTab, ReviewTab, ViewTab, TableTab, PictureTab, HeaderFooterTab } from './ribbon/ReviewTabs'
 import { toggleTrackChanges } from '@/state/commands'
 
+import { Group, Btn } from './ribbon/controls'
+import { Mail, Keyboard, Search, Tags } from 'lucide-react'
+
 const TABS = [
   { id: 'home', label: 'Home' },
   { id: 'insert', label: 'Insert' },
@@ -15,8 +18,10 @@ const TABS = [
   { id: 'design', label: 'Design' },
   { id: 'layout', label: 'Layout' },
   { id: 'references', label: 'References' },
+  { id: 'mailings', label: 'Mailings' },
   { id: 'review', label: 'Review' },
-  { id: 'view', label: 'View' }
+  { id: 'view', label: 'View' },
+  { id: 'help', label: 'Help' }
 ]
 
 export function Ribbon(): ReactNode {
@@ -68,6 +73,18 @@ export function Ribbon(): ReactNode {
         break
       case 'references':
         body = <ReferencesTab editor={editor} />
+        break
+      case 'mailings':
+        body = <><Group label="Create">
+          <Btn big icon={<Mail />} label="Envelopes" onClick={() => useApp.getState().openDialog('envelope')} />
+          <Btn big icon={<Tags />} label="Labels" onClick={() => useApp.getState().openDialog('labels')} />
+        </Group><Group label="Letters"><Btn big icon={<Mail />} label="Mail Merge" onClick={() => useApp.getState().openDialog('mailMerge')} /></Group></>
+        break
+      case 'help':
+        body = <Group label="Help">
+          <Btn big icon={<Search />} label="Find a Command" onClick={() => set({ palette: true })} />
+          <Btn big icon={<Keyboard />} label="Keyboard Shortcuts" onClick={() => useApp.getState().openDialog('shortcuts')} />
+        </Group>
         break
       case 'review':
         body = <ReviewTab editor={editor} />
